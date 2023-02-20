@@ -1,9 +1,11 @@
 import datetime
 from uuid import uuid4 as uuid
+
 import jwt
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_cors import cross_origin
 
+from extensions import Session
 from models import User, Group
 
 auth = Blueprint('auth', __name__)
@@ -18,7 +20,7 @@ def encode_auth_token(user_id):
         }
         return jwt.encode(
             payload,
-            app.config.get('SECRET_KEY'),
+            current_app.config.get('SECRET_KEY'),
             algorithm='HS256'
         )
     except Exception as exception:
@@ -37,7 +39,7 @@ def register():
     if user:
         response_object = {
             'status': 'fail',
-            'message': 'User already exists. Please Log in.',
+            'message': 'User already exists. Please log in.',
         }
         return jsonify(response_object), 202
 
