@@ -6,7 +6,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_cors import cross_origin
 
 from extensions import Session
-from models import User, Group
+from models import User
 
 auth = Blueprint('auth', __name__)
 
@@ -35,7 +35,7 @@ def register():
     # get the post data
     post_data = request.get_json()
     # check if user already exists
-    user = session.query(User).filter_by(email=post_data.get('email')).first()
+    user = session.query(User).filter_by(phone=post_data.get('phone')).first()
     if user:
         response_object = {
             'status': 'fail',
@@ -44,20 +44,11 @@ def register():
         return jsonify(response_object), 202
 
     try:
-        group = session.query(Group).filter_by(id=post_data.get('group_id')).first()
-        if not group:
-            response_object = {
-                'status': 'fail',
-                'message': f'Group with id {post_data.get("group_id")} does not exist.'
-            }
-            return jsonify(response_object), 401
-
         user = User(
             id=uuid(),
-            email=post_data.get('email'),
-            password=post_data.get('password'),
+            display_name=post_data.get('display_name'),
+            username=post_data.get('username'),
             phone=post_data.get('phone'),
-            group_id=post_data.get('group_id')
         )
         session.add(user)
         session.commit()
@@ -89,7 +80,7 @@ def login():
     post_data = request.get_json()
     try:
         # fetch the user data
-        user = session.query(User).filter_by(email=post_data.get('email')).first()
+        user = session.query(User).filter_by(email=post_data.get('phone')).first()
         if not user:
             response_object = {
                 'status': 'fail',
@@ -97,12 +88,7 @@ def login():
             }
             return jsonify(response_object), 404
 
-        if user.password != post_data.get('password'):
-            response_object = {
-                'status': 'fail',
-                'message': 'Wrong password.'
-            }
-            return jsonify(response_object), 401
+        # TODO: Verify phone number
 
         auth_token = encode_auth_token(user.id)
         response_object = {
