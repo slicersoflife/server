@@ -1,0 +1,13 @@
+name: Development
+
+on:
+  [ push,pull_request ]:
+    paths:
+      - '*.py'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: psf/black@stable
