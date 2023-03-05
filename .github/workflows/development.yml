@@ -1,9 +1,12 @@
 name: Development
 
 on:
-  [ push,pull_request ]:
+  push:
     paths:
-      - '*.py'
+      - "**.py"
+  pull_request:
+    paths:
+      - "**.py"
 
 jobs:
   lint:
