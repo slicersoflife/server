@@ -8,26 +8,24 @@ from flask_cors import cross_origin
 from extensions import Session
 from models import User
 
-auth = Blueprint('auth', __name__)
+auth = Blueprint("auth", __name__)
 
 
 def encode_auth_token(user_id):
     try:
         payload = {
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=60),
-            'iat': datetime.datetime.utcnow(),
-            'sub': str(user_id)
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=60),
+            "iat": datetime.datetime.utcnow(),
+            "sub": str(user_id),
         }
         return jwt.encode(
-            payload,
-            current_app.config.get('SECRET_KEY'),
-            algorithm='HS256'
+            payload, current_app.config.get("SECRET_KEY"), algorithm="HS256"
         )
     except Exception as exception:
         return exception
 
 
-@auth.post('/register')
+@auth.post("/register")
 @cross_origin()
 def register():
     session = Session()
@@ -35,20 +33,20 @@ def register():
     # get the post data
     post_data = request.get_json()
     # check if user already exists
-    user = session.query(User).filter_by(phone=post_data.get('phone')).first()
+    user = session.query(User).filter_by(phone=post_data.get("phone")).first()
     if user:
         response_object = {
-            'status': 'fail',
-            'message': 'User already exists. Please log in.',
+            "status": "fail",
+            "message": "User already exists. Please log in.",
         }
         return jsonify(response_object), 202
 
     try:
         user = User(
             id=uuid(),
-            display_name=post_data.get('display_name'),
-            username=post_data.get('username'),
-            phone=post_data.get('phone'),
+            display_name=post_data.get("display_name"),
+            username=post_data.get("username"),
+            phone=post_data.get("phone"),
         )
         session.add(user)
         session.commit()
@@ -56,22 +54,22 @@ def register():
         # generate the auth token
         auth_token = encode_auth_token(user.id)
         response_object = {
-            'status': 'success',
-            'message': 'Successfully registered.',
-            'auth_token': auth_token
+            "status": "success",
+            "message": "Successfully registered.",
+            "auth_token": auth_token,
         }
         return jsonify(response_object), 201
 
     except Exception as exception:
         print(exception)
         response_object = {
-            'status': 'fail',
-            'message': 'Some error occurred. Please try again.'
+            "status": "fail",
+            "message": "Some error occurred. Please try again.",
         }
         return jsonify(response_object), 401
 
 
-@auth.post('/login')
+@auth.post("/login")
 @cross_origin()
 def login():
     session = Session()
@@ -80,28 +78,22 @@ def login():
     post_data = request.get_json()
     try:
         # fetch the user data
-        user = session.query(User).filter_by(email=post_data.get('phone')).first()
+        user = session.query(User).filter_by(email=post_data.get("phone")).first()
         if not user:
-            response_object = {
-                'status': 'fail',
-                'message': 'User does not exist.'
-            }
+            response_object = {"status": "fail", "message": "User does not exist."}
             return jsonify(response_object), 404
 
         # TODO: Verify phone number
 
         auth_token = encode_auth_token(user.id)
         response_object = {
-            'status': 'success',
-            'message': 'Successfully logged in.',
-            'auth_token': auth_token
+            "status": "success",
+            "message": "Successfully logged in.",
+            "auth_token": auth_token,
         }
         return jsonify(response_object), 200
 
     except Exception as exception:
         print(exception)
-        response_object = {
-            'status': 'fail',
-            'message': str(exception)
-        }
+        response_object = {"status": "fail", "message": str(exception)}
         return jsonify(response_object), 500
