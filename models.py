@@ -1,5 +1,5 @@
-from sqlalchemy import Column, SmallInteger, String, Numeric
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Column, String
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -7,25 +7,14 @@ Base = declarative_base()
 
 class User(Base):
     """A model of a user."""
-    __tablename__ = 'users'
+
+    __tablename__ = "users"
     id = Column(UUID(as_uuid=True), primary_key=True)
 
-    name = Column(String(200))
-    email = Column(String(200))
-    password = Column(String(200))
-    phone = Column(String(12))
-    group_id = Column(UUID(as_uuid=True), primary_key=False)
+    display_name = Column(String(200))
+    username = Column(String(200))
+    phone = Column(String(200))
+    profile_picture_url = Column(String(200))
 
     def __repr__(self):
-        return f"User<{self.id} | {self.name}>"
-
-
-class Group(Base):
-    """A model of a group of users."""
-    __tablename__ = 'groups'
-    id = Column(UUID(as_uuid=True), primary_key=True)
-
-    name = Column(String(200))
-
-    def __repr__(self):
-        return f"Group<{self.id} | {self.name}>"
+        return f"User<{self.id} | {self.username}>"

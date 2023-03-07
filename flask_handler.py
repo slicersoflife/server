@@ -16,7 +16,7 @@ def load_app() -> Flask:
     main_app.config.from_object(f'config.{os.getenv("CONFIG", "BaseConfig")}')
     main_app.register_blueprint(auth_blueprint)
 
-    engine = create_engine(main_app.config.get('DATABASE_URL'))
+    engine = create_engine(main_app.config.get("DATABASE_URL"))
     Base.metadata.create_all(engine)
     Session.configure(bind=engine)
     print("Connected to database.")
@@ -26,4 +26,4 @@ def load_app() -> Flask:
 
 if __name__ == "__main__":
     app = load_app()
-    app.run(app.config.get('PORT'))
+    app.run(app.config.get("PORT"))
