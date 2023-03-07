@@ -13,7 +13,8 @@ class User(Base):
 
     display_name = Column(String(200))
     username = Column(String(200))
-    phone = Column(String(12))
+    phone = Column(String(200))
+    profile_picture_url = Column(String(200))
 
     def __repr__(self):
-        return f"User<{self.id} | {self.name}>"
+        return f"User<{self.id} | {self.username}>"
