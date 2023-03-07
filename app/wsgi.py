@@ -12,7 +12,7 @@ def load_app() -> Flask:
     load_dotenv()
 
     main_app = Flask(__name__)
-    main_app.config.from_object(f'config.{os.getenv("CONFIG", "BaseConfig")}')
+    main_app.config.from_object(f'app.config.{os.getenv("CONFIG", "BaseConfig")}')
     main_app.register_blueprint(auth_blueprint)
 
     engine = create_engine(main_app.config.get("DATABASE_URL"))
