@@ -42,6 +42,7 @@ def add_routes(bp: Blueprint):
 
         try:
             # TODO: Verify phone number
+            # TODO: Phone number encryption
             user = User(
                 id=uuid(),
                 display_name=post_data.get("display_name"),
