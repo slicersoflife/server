@@ -4,9 +4,8 @@ from dotenv import load_dotenv
 from flask import Flask
 from sqlalchemy import create_engine
 
-from auth import auth as auth_blueprint
-from extensions import Session
-from models import Base
+from app.auth import auth as auth_blueprint
+from app.extensions import Base, Session
 
 
 def load_app() -> Flask:

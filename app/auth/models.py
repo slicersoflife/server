@@ -1,8 +1,7 @@
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base
 
-Base = declarative_base()
+from app.extensions import Base
 
 
 class User(Base):
