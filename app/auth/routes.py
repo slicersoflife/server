@@ -75,7 +75,7 @@ def add_routes(bp: Blueprint):
         try:
             # fetch the user data
             user = (
-                db.session.query(User).filter_by(email=post_data.get("phone")).first()
+                db.session.query(User).filter_by(phone=post_data.get("phone")).first()
             )
             if not user:
                 response_object = {"status": "fail", "message": "User does not exist."}
