@@ -5,7 +5,7 @@ import jwt
 from flask import request, jsonify, current_app, Blueprint
 from flask_cors import cross_origin
 
-from app.extensions import Session
+from app.extensions import db
 from .models import User
 
 
@@ -27,12 +27,10 @@ def add_routes(bp: Blueprint):
     @bp.post("/register")
     @cross_origin()
     def register():
-        session = Session()
-
         # get the post data
         post_data = request.get_json()
         # check if user already exists
-        user = session.query(User).filter_by(phone=post_data.get("phone")).first()
+        user = db.session.query(User).filter_by(phone=post_data.get("phone")).first()
         if user:
             response_object = {
                 "status": "fail",
@@ -49,8 +47,8 @@ def add_routes(bp: Blueprint):
                 username=post_data.get("username"),
                 phone=post_data.get("phone"),
             )
-            session.add(user)
-            session.commit()
+            db.session.add(user)
+            db.session.commit()
 
             # generate the auth token
             auth_token = encode_auth_token(user.id)
@@ -72,13 +70,13 @@ def add_routes(bp: Blueprint):
     @bp.post("/login")
     @cross_origin()
     def login():
-        session = Session()
-
         # get the post data
         post_data = request.get_json()
         try:
             # fetch the user data
-            user = session.query(User).filter_by(email=post_data.get("phone")).first()
+            user = (
+                db.session.query(User).filter_by(email=post_data.get("phone")).first()
+            )
             if not user:
                 response_object = {"status": "fail", "message": "User does not exist."}
                 return jsonify(response_object), 404

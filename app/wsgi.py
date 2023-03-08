@@ -2,10 +2,9 @@ import os
 
 from dotenv import load_dotenv
 from flask import Flask
-from sqlalchemy import create_engine
 
 from app.auth import auth as auth_blueprint
-from app.extensions import Base, Session
+from app.extensions import db, migrate
 
 
 def load_app() -> Flask:
@@ -15,10 +14,12 @@ def load_app() -> Flask:
     main_app.config.from_object(f'app.config.{os.getenv("CONFIG", "BaseConfig")}')
     main_app.register_blueprint(auth_blueprint)
 
-    engine = create_engine(main_app.config.get("DATABASE_URL"))
-    Base.metadata.create_all(engine)
-    Session.configure(bind=engine)
-    print("Connected to database.")
+    db.init_app(main_app)
+    migrate.init_app(main_app, db)
+
+    with main_app.app_context():
+        db.create_all()
+        print("Connected to database.")
 
     return main_app
 
