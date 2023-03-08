@@ -1,10 +1,10 @@
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.extensions import Base
+from app.extensions import db
 
 
-class User(Base):
+class User(db.Model):
     """A model of a user."""
 
     __tablename__ = "users"

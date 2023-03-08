@@ -1,4 +1,5 @@
-from sqlalchemy.orm import declarative_base, sessionmaker
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 
-Base = declarative_base()
-Session = sessionmaker()
+db = SQLAlchemy()
+migrate = Migrate()
