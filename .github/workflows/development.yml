@@ -1,7 +1,6 @@
 name: Development
 
 on:
-  pull_request:
   push:
     paths:
       - "**.py"
