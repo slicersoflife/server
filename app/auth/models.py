@@ -16,7 +16,7 @@ class User(db.Model):
     friend_requests_received = relationship('FriendRequest', foreign_keys='FriendRequest.to_user_id')
 
     def __repr__(self):
-    return f"User<{self.id} | {self.username}>"
+        return f"User<{self.id} | {self.username}>"
 
 class FriendRequest(db.model):
     __tablename__ = 'friend_requests'
