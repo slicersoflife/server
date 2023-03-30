@@ -5,62 +5,11 @@ from flask_cors import cross_origin
 from sqlalchemy import select
 
 from app.extensions import db, cache, twilio
-from .helpers import encode_auth_token, generate_code, get_hash
+from .helpers import encode_token, decode_token, generate_code, get_hash
 from .models import User
 
 
 def add_routes(bp: Blueprint):
-    @bp.post("/register")
-    @cross_origin()
-    def register():
-        post_data = request.get_json()
-
-        if "phone" not in post_data:
-            response_object = {
-                "status": "fail",
-                "message": "You must provide a phone number.",
-            }
-            return jsonify(response_object), 401
-
-        user = db.session.execute(
-            select(User).filter_by(phone=post_data.get("phone"))
-        ).first()
-        if user:
-            response_object = {
-                "status": "fail",
-                "message": "User already exists. Please log in.",
-            }
-            return jsonify(response_object), 202
-
-        try:
-            # TODO: Verify phone number
-            # TODO: Phone number encryption
-            user = User(
-                id=uuid(),
-                display_name=post_data.get("display_name"),
-                username=post_data.get("username"),
-                phone=get_hash(post_data.get("phone")),
-            )
-            db.session.add(user)
-            db.session.commit()
-
-            # generate the auth token
-            auth_token = encode_auth_token(user.id)
-            response_object = {
-                "status": "success",
-                "message": "Successfully registered.",
-                "auth_token": auth_token,
-            }
-            return jsonify(response_object), 201
-
-        except Exception as exception:
-            print(exception)
-            response_object = {
-                "status": "fail",
-                "message": "Some error occurred. Please try again.",
-            }
-            return jsonify(response_object), 503
-
     @bp.post("/verify/start")
     @cross_origin()
     def verify_start():
@@ -121,8 +70,113 @@ def add_routes(bp: Blueprint):
             }
             return jsonify(response_object), 401
 
+        verification_token = encode_token(phone_number_hash)
         response_object = {
             "status": "success",
             "message": "Correct verification code.",
+            "verification_token": verification_token,
         }
         return jsonify(response_object), 200
+
+    @bp.post("/register")
+    @cross_origin()
+    def register():
+        post_data = request.get_json()
+
+        if "Authorization" not in request.headers:
+            response_object = {
+                "status": "fail",
+                "message": "You must provide a verification token.",
+            }
+            return jsonify(response_object), 401
+
+        auth_header = request.headers.get("Authorization").split()
+        if len(auth_header) < 2:
+            response_object = {
+                "status": "fail",
+                "message": "Invalid authorization header format.",
+            }
+            return jsonify(response_object), 401
+
+        phone_number_hash = decode_token(auth_header[1])
+        user = db.session.execute(
+            select(User).filter_by(phone=phone_number_hash)
+        ).first()
+        if user:
+            response_object = {
+                "status": "fail",
+                "message": "User already exists. Please log in.",
+            }
+            return jsonify(response_object), 202
+
+        try:
+            user = User(
+                id=uuid(),
+                display_name=post_data.get("display_name"),
+                username=post_data.get("username"),
+                phone=phone_number_hash,
+            )
+            db.session.add(user)
+            db.session.commit()
+
+            auth_token = encode_token(user.id)
+            response_object = {
+                "status": "success",
+                "message": "Successfully registered.",
+                "auth_token": auth_token,
+            }
+            return jsonify(response_object), 201
+
+        except Exception as exception:
+            print(exception)
+            response_object = {
+                "status": "fail",
+                "message": "Some error occurred. Please try again.",
+            }
+            return jsonify(response_object), 503
+
+    @bp.get("/login")
+    @cross_origin()
+    def login():
+        if "Authorization" not in request.headers:
+            response_object = {
+                "status": "fail",
+                "message": "You must provide a verification token.",
+            }
+            return jsonify(response_object), 401
+
+        auth_header = request.headers.get("Authorization").split()
+        if len(auth_header) < 2:
+            response_object = {
+                "status": "fail",
+                "message": "Invalid authorization header format.",
+            }
+            return jsonify(response_object), 401
+
+        phone_number_hash = decode_token(auth_header[1])
+        user = db.session.scalars(
+            select(User).filter_by(phone=phone_number_hash)
+        ).first()
+        if user is None:
+            response_object = {
+                "status": "fail",
+                "message": "User not found.",
+            }
+            return jsonify(response_object), 404
+
+        try:
+            auth_token = encode_token(user.id)
+            response_object = {
+                "status": "success",
+                "message": "Successfully logged in.",
+                "auth_token": auth_token,
+            }
+            return jsonify(response_object), 201
+
+        except Exception as exception:
+            print(exception)
+            response_object = {
+                "status": "fail",
+                "message": "Some error occurred. Please try again.",
+            }
+            return jsonify(response_object), 503

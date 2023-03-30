@@ -6,18 +6,25 @@ import jwt
 from flask import current_app
 
 
-def encode_auth_token(user_id):
+def encode_token(identifier):
     try:
         payload = {
             "exp": datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=60),
             "iat": datetime.datetime.utcnow(),
-            "sub": str(user_id),
+            "sub": str(identifier),
         }
         return jwt.encode(
             payload, current_app.config.get("SECRET_KEY"), algorithm="HS256"
         )
     except Exception as exception:
         return exception
+
+
+def decode_token(token):
+    payload = jwt.decode(
+        token, current_app.config.get("SECRET_KEY"), algorithms="HS256"
+    )
+    return payload.get("sub")
 
 
 def get_hash(phone):
