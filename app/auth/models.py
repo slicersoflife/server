@@ -1,6 +1,5 @@
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, relationship, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql.sqltypes import INT
 
 from app.extensions import db
 
@@ -8,7 +7,7 @@ from app.extensions import db
 class User(db.Model):
     __tablename__ = "users"
 
-    id = Column(UUID, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True)
     display_name = Column(String(50), nullable=False)
     username = Column(String(20), nullable=False, unique=True)
     phone = Column(String(20), nullable=False, unique=True)
@@ -22,12 +21,3 @@ class User(db.Model):
 
     def __repr__(self):
         return f"User<{self.id} | {self.username}>"
-
-
-class FriendRequest(db.model):
-    __tablename__ = "friend_requests"
-
-    id_requests = Column(UUID, primary_key=True)
-    from_user_id = Column(String, ForeignKey("users.id"), nullable=False)
-    to_user_id = Column(String, ForeignKey("users.id"), nullable=False)
-    status = Column(Enum("accepted", "rejected", "pending"), nullable=False)
