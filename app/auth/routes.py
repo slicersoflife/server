@@ -1,36 +1,30 @@
-import datetime
 from uuid import uuid4 as uuid
 
-import jwt
-from flask import request, jsonify, current_app, Blueprint
+from flask import request, jsonify, Blueprint, current_app
 from flask_cors import cross_origin
+from sqlalchemy import select
 
-from app.extensions import db
+from app.extensions import db, cache, twilio
+from .helpers import encode_auth_token, generate_code, get_hash
 from .models import User
-
-
-def encode_auth_token(user_id):
-    try:
-        payload = {
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=60),
-            "iat": datetime.datetime.utcnow(),
-            "sub": str(user_id),
-        }
-        return jwt.encode(
-            payload, current_app.config.get("SECRET_KEY"), algorithm="HS256"
-        )
-    except Exception as exception:
-        return exception
 
 
 def add_routes(bp: Blueprint):
     @bp.post("/register")
     @cross_origin()
     def register():
-        # get the post data
         post_data = request.get_json()
-        # check if user already exists
-        user = db.session.query(User).filter_by(phone=post_data.get("phone")).first()
+
+        if "phone" not in post_data:
+            response_object = {
+                "status": "fail",
+                "message": "You must provide a phone number.",
+            }
+            return jsonify(response_object), 401
+
+        user = db.session.execute(
+            select(User).filter_by(phone=post_data.get("phone"))
+        ).first()
         if user:
             response_object = {
                 "status": "fail",
@@ -45,7 +39,7 @@ def add_routes(bp: Blueprint):
                 id=uuid(),
                 display_name=post_data.get("display_name"),
                 username=post_data.get("username"),
-                phone=post_data.get("phone"),
+                phone=get_hash(post_data.get("phone")),
             )
             db.session.add(user)
             db.session.commit()
@@ -65,33 +59,70 @@ def add_routes(bp: Blueprint):
                 "status": "fail",
                 "message": "Some error occurred. Please try again.",
             }
+            return jsonify(response_object), 503
+
+    @bp.post("/verify/start")
+    @cross_origin()
+    def verify_start():
+        post_data = request.get_json()
+
+        if "phone" not in post_data:
+            response_object = {
+                "status": "fail",
+                "message": "You must provide a phone number.",
+            }
             return jsonify(response_object), 401
 
-    @bp.post("/login")
-    @cross_origin()
-    def login():
-        # get the post data
-        post_data = request.get_json()
         try:
-            # fetch the user data
-            user = (
-                db.session.query(User).filter_by(phone=post_data.get("phone")).first()
+            phone_number_hash = get_hash(post_data.get("phone"))
+            code = generate_code()
+            cache.set(
+                phone_number_hash,
+                code,
+                ex=current_app.config.get("VERIFICATION_CODE_TTL"),
             )
-            if not user:
-                response_object = {"status": "fail", "message": "User does not exist."}
-                return jsonify(response_object), 404
-
-            # TODO: Verify phone number
-
-            auth_token = encode_auth_token(user.id)
-            response_object = {
-                "status": "success",
-                "message": "Successfully logged in.",
-                "auth_token": auth_token,
-            }
+            twilio.messages.create(
+                from_=current_app.config.get("TWILIO_PHONE_NUMBER"),
+                to=post_data.get("phone"),
+                body=f"{code} is your verification code for Slice of Life.",
+            )
+            response_object = {"status": "success", "message": "Sent verification."}
             return jsonify(response_object), 200
 
         except Exception as exception:
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
-            return jsonify(response_object), 500
+            return jsonify(response_object), 503
+
+    @bp.post("/verify")
+    def verify():
+        post_data = request.get_json()
+        if "phone" not in post_data or "code" not in post_data:
+            response_object = {
+                "status": "fail",
+                "message": "You must provide a phone number and verification code.",
+            }
+            return jsonify(response_object), 401
+
+        phone_number_hash = get_hash(post_data.get("phone"))
+        saved_code = cache.get(phone_number_hash)
+
+        if saved_code is None:
+            response_object = {
+                "status": "fail",
+                "message": "That phone number is unknown.",
+            }
+            return jsonify(response_object), 401
+
+        if saved_code != post_data.get("code"):
+            response_object = {
+                "status": "fail",
+                "message": "Wrong verification code.",
+            }
+            return jsonify(response_object), 401
+
+        response_object = {
+            "status": "success",
+            "message": "Correct verification code.",
+        }
+        return jsonify(response_object), 200
