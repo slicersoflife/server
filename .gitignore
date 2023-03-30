@@ -4,4 +4,4 @@
 
 .idea
 
-dump.rdb
+*.rdb
