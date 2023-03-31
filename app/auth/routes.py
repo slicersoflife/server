@@ -71,26 +71,35 @@ def add_routes(bp: Blueprint):
             }
             return jsonify(response_object), 401
 
-        user = db.session.scalars(
-            select(User).filter_by(phone=phone_number_hash)
-        ).first()
-        if user is None:
-            verification_token = encode_token(phone_number_hash)
+        try:
+            user = db.session.scalars(
+                select(User).filter_by(phone=phone_number_hash)
+            ).first()
+            if user is None:
+                verification_token = encode_token(phone_number_hash)
+                response_object = {
+                    "status": "verified",
+                    "message": "Correct verification code.",
+                    "verification_token": verification_token,
+                }
+                return jsonify(response_object), 200
+            else:
+                auth_token = encode_token(user.id)
+                response_object = {
+                    "status": "authenticated",
+                    "message": "Successfully logged in.",
+                    "auth_token": auth_token,
+                    "user": user_schema.dump(user),
+                }
+                return jsonify(response_object), 201
+            
+        except Exception as exception:
+            print(exception)
             response_object = {
-                "status": "verified",
-                "message": "Correct verification code.",
-                "verification_token": verification_token,
+                "status": "fail",
+                "message": "Some error occurred. Please try again.",
             }
-            return jsonify(response_object), 200
-        else:
-            auth_token = encode_token(user.id)
-            response_object = {
-                "status": "authenticated",
-                "message": "Successfully logged in.",
-                "auth_token": auth_token,
-                "user": user_schema.dump(user),
-            }
-            return jsonify(response_object), 201
+            return jsonify(response_object), 503
 
     @bp.post("/register")
     @cross_origin()
