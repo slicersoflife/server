@@ -92,7 +92,7 @@ def add_routes(bp: Blueprint):
                     "user": user_schema.dump(user),
                 }
                 return jsonify(response_object), 201
-            
+
         except Exception as exception:
             print(exception)
             response_object = {
