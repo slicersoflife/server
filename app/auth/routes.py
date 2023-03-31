@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app.extensions import db, cache, twilio
 from .helpers import encode_token, decode_token, generate_code, get_hash
 from .models import User
+from .schema import user_schema
 
 
 def add_routes(bp: Blueprint):
@@ -70,13 +71,26 @@ def add_routes(bp: Blueprint):
             }
             return jsonify(response_object), 401
 
-        verification_token = encode_token(phone_number_hash)
-        response_object = {
-            "status": "success",
-            "message": "Correct verification code.",
-            "verification_token": verification_token,
-        }
-        return jsonify(response_object), 200
+        user = db.session.scalars(
+            select(User).filter_by(phone=phone_number_hash)
+        ).first()
+        if user is None:
+            verification_token = encode_token(phone_number_hash)
+            response_object = {
+                "status": "verified",
+                "message": "Correct verification code.",
+                "verification_token": verification_token,
+            }
+            return jsonify(response_object), 200
+        else:
+            auth_token = encode_token(user.id)
+            response_object = {
+                "status": "authenticated",
+                "message": "Successfully logged in.",
+                "auth_token": auth_token,
+                "user": user_schema.dump(user),
+            }
+            return jsonify(response_object), 201
 
     @bp.post("/register")
     @cross_origin()
@@ -123,52 +137,6 @@ def add_routes(bp: Blueprint):
             response_object = {
                 "status": "success",
                 "message": "Successfully registered.",
-                "auth_token": auth_token,
-            }
-            return jsonify(response_object), 201
-
-        except Exception as exception:
-            print(exception)
-            response_object = {
-                "status": "fail",
-                "message": "Some error occurred. Please try again.",
-            }
-            return jsonify(response_object), 503
-
-    @bp.get("/login")
-    @cross_origin()
-    def login():
-        if "Authorization" not in request.headers:
-            response_object = {
-                "status": "fail",
-                "message": "You must provide a verification token.",
-            }
-            return jsonify(response_object), 401
-
-        auth_header = request.headers.get("Authorization").split()
-        if len(auth_header) < 2:
-            response_object = {
-                "status": "fail",
-                "message": "Invalid authorization header format.",
-            }
-            return jsonify(response_object), 401
-
-        phone_number_hash = decode_token(auth_header[1])
-        user = db.session.scalars(
-            select(User).filter_by(phone=phone_number_hash)
-        ).first()
-        if user is None:
-            response_object = {
-                "status": "fail",
-                "message": "User not found.",
-            }
-            return jsonify(response_object), 404
-
-        try:
-            auth_token = encode_token(user.id)
-            response_object = {
-                "status": "success",
-                "message": "Successfully logged in.",
                 "auth_token": auth_token,
             }
             return jsonify(response_object), 201

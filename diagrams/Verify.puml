@@ -43,15 +43,23 @@ end
 
 Server -> CockroachDB ++ : Check if user with ""phone_number_hash"" exists
 Server <- CockroachDB -- : User
-alt User is null
-    Server -> CockroachDB ++ : Create new user
-    Server <- CockroachDB -- : User
+alt User exists
+    Server -> Server : Generate ""auth_token"" (JWT)
+    Client <- Server : **[201]**\n\
+    {\n\t\
+        status="authenticated"\n\t\
+        User\n\t\
+        auth token\n\
+    }
+else User does not exist
+    Server -> Server : Generate ""verification_token"" (JWT)
+    Client <- Server -- : **[200]**\n\
+    {\n\t\
+        status="verified"\n\t\
+        verification token\n\
+    }
 end
 
-Server -> Server: Generate ""auth_token"" (JWT)
-Client <- Server -- : **[200]**\n\
-{\n\t\
-    auth token\n\
-}
+
 
 @enduml
