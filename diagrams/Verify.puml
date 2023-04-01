@@ -1,0 +1,65 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+boundary Client
+boundary Server
+entity Twilio
+database Redis
+database CockroachDB
+
+==User enters phone number==
+
+Client -> Server ++ : **POST /verify/start** \n\
+{\n\t\
+    phone number\n\
+}
+Server -> Server: Generate  ""phone_number_hash""
+Server -> Server: Generate  ""verification_code""
+Server -> Redis ++ : Cache ""(phone_number_hash, verification_code)""
+Server <- Redis --
+Server -> Twilio ++ : Text  ""verification_code""
+Twilio -> Server -- :
+Client <- Server --: **[200]**
+
+==User gets text message==
+
+Client -> Server ++ : **POST /verify** \n\
+{\n\t\
+    phone number\n\t\
+    verification code\n\
+}
+Server -> Server: Generate  ""phone_number_hash""
+Server -> Redis ++ : Check ""phone_number_hash""
+alt Unknown phone #
+    Server <-- Redis : null
+    Client <-- Server : **[401]**
+end
+
+Server <- Redis -- : Return  ""saved_code""
+Server -> Server: Check if ""verification_code == saved_code""
+alt Wrong verification code
+    Client <-- Server : **[403]**
+end
+
+Server -> CockroachDB ++ : Check if user with ""phone_number_hash"" exists
+Server <- CockroachDB -- : User
+alt User exists
+    Server -> Server : Generate ""auth_token"" (JWT)
+    Client <- Server : **[201]**\n\
+    {\n\t\
+        status="authenticated"\n\t\
+        User\n\t\
+        auth token\n\
+    }
+else User does not exist
+    Server -> Server : Generate ""verification_token"" (JWT)
+    Client <- Server -- : **[200]**\n\
+    {\n\t\
+        status="verified"\n\t\
+        verification token\n\
+    }
+end
+
+
+
+@enduml
