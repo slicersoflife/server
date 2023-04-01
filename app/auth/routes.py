@@ -10,6 +10,36 @@ from .schema import user_schema
 
 
 def add_routes(bp: Blueprint):
+    @bp.post("/verify/start/mock")
+    def verify_start_mock():
+        post_data = request.get_json()
+
+        if "phone" not in post_data:
+            response_object = {
+                "status": "fail",
+                "message": "You must provide a phone number.",
+            }
+            return jsonify(response_object), 401
+
+        try:
+            phone_number_hash = get_hash(post_data.get("phone"))
+            code = generate_code()
+            cache.set(
+                phone_number_hash,
+                code,
+                ex=current_app.config.get("VERIFICATION_CODE_TTL"),
+            )
+            response_object = {
+                "status": "success",
+                "message": f"{code} is your verification code for Slice of Life.",
+            }
+            return jsonify(response_object), 200
+
+        except Exception as exception:
+            print(exception)
+            response_object = {"status": "fail", "message": str(exception)}
+            return jsonify(response_object), 503
+
     @bp.post("/verify/start")
     def verify_start():
         post_data = request.get_json()
