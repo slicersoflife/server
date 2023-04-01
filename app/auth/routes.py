@@ -1,7 +1,6 @@
 from uuid import uuid4 as uuid
 
 from flask import request, jsonify, Blueprint, current_app
-from flask_cors import cross_origin
 from sqlalchemy import select
 
 from app.extensions import db, cache, twilio
@@ -12,7 +11,6 @@ from .schema import user_schema
 
 def add_routes(bp: Blueprint):
     @bp.post("/verify/start")
-    @cross_origin()
     def verify_start():
         post_data = request.get_json()
 
@@ -102,7 +100,6 @@ def add_routes(bp: Blueprint):
             return jsonify(response_object), 503
 
     @bp.post("/register")
-    @cross_origin()
     def register():
         post_data = request.get_json()
 
