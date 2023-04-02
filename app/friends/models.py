@@ -7,7 +7,7 @@ from app.extensions import db
 class FriendRequest(db.model):
     __tablename__ = "friend_requests"
 
-    id_requests = Column(UUID, primary_key=True)
+    id = Column(UUID, primary_key=True)
     from_user_id = Column(String, ForeignKey("users.id"), nullable=False)
     to_user_id = Column(String, ForeignKey("users.id"), nullable=False)
-    status = Column(Enum("accepted", "rejected", "pending"), nullable=False)
+    status = Column(Enum("accepted", "pending"), nullable=False)
