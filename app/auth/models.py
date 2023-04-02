@@ -1,8 +1,9 @@
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.extensions import db
-from app.friends.models import FriendRequest
+from app.friends.models import Friend, FriendRequest
 
 
 class User(db.Model):
@@ -13,15 +14,34 @@ class User(db.Model):
     username = Column(String(20), nullable=False, unique=True)
     phone = Column(String(20), nullable=False, unique=True)
     profile_picture_url = Column(String(255), nullable=True)
-    friend_requests_sent = db.relationship(
+
+    friends_a = relationship(
         "User",
-        secondary=FriendRequest.__tablename__,
-        foreign_keys=FriendRequest.from_user_id,
+        secondary=Friend.__tablename__,
+        primaryjoin=id == Friend.user_a_id,
+        secondaryjoin=id == Friend.user_b_id,
+        viewonly=True,
     )
-    friend_requests_received = db.relationship(
+    friends_b = relationship(
+        "User",
+        secondary=Friend.__tablename__,
+        primaryjoin=id == Friend.user_b_id,
+        secondaryjoin=id == Friend.user_a_id,
+        viewonly=True,
+    )
+    friend_requests_sent = relationship(
         "User",
         secondary=FriendRequest.__tablename__,
-        foreign_keys=FriendRequest.to_user_id,
+        primaryjoin=id == FriendRequest.from_user_id,
+        secondaryjoin=id == FriendRequest.to_user_id,
+        viewonly=True,
+    )
+    friend_requests_received = relationship(
+        "User",
+        secondary=FriendRequest.__tablename__,
+        primaryjoin=id == FriendRequest.to_user_id,
+        secondaryjoin=id == FriendRequest.from_user_id,
+        viewonly=True,
     )
 
     def __repr__(self):
