@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 
-from app.auth import auth as auth_blueprint
 from app.extensions import db, migrate
+from app.auth import auth as auth_blueprint
+from app.friends import friends as friends_blueprint
 
 
 def load_app() -> Flask:
@@ -14,6 +15,7 @@ def load_app() -> Flask:
     main_app = Flask(__name__)
     main_app.config.from_object(f'app.config.{os.getenv("CONFIG", "BaseConfig")}')
     main_app.register_blueprint(auth_blueprint)
+    main_app.register_blueprint(friends_blueprint)
 
     CORS(main_app, origins="*")
     db.init_app(main_app)

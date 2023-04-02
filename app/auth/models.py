@@ -1,7 +1,8 @@
-from sqlalchemy import Column, String, relationship, ForeignKey, Enum
+from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.extensions import db
+from app.friends.models import FriendRequest
 
 
 class User(db.Model):
@@ -12,11 +13,15 @@ class User(db.Model):
     username = Column(String(20), nullable=False, unique=True)
     phone = Column(String(20), nullable=False, unique=True)
     profile_picture_url = Column(String(255), nullable=True)
-    friend_requests_sent = relationship(
-        "FriendRequest", foreign_keys="FriendRequest.from_user_id"
+    friend_requests_sent = db.relationship(
+        "User",
+        secondary=FriendRequest.__tablename__,
+        foreign_keys=FriendRequest.from_user_id,
     )
-    friend_requests_received = relationship(
-        "FriendRequest", foreign_keys="FriendRequest.to_user_id"
+    friend_requests_received = db.relationship(
+        "User",
+        secondary=FriendRequest.__tablename__,
+        foreign_keys=FriendRequest.to_user_id,
     )
 
     def __repr__(self):
