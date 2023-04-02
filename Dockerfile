@@ -5,7 +5,8 @@ FROM python:3.7
 WORKDIR /src
 COPY app ./app
 COPY migrations ./migrations
-COPY .env gunicorn.conf.py requirements.txt run_gunicorn.sh ./
+COPY .env.production .env
+COPY gunicorn.conf.py requirements.txt run_gunicorn.sh ./
 RUN chmod +x run_gunicorn.sh
 
 # 3
