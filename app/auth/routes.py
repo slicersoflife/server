@@ -174,6 +174,7 @@ def add_routes(bp: Blueprint):
                 "status": "success",
                 "message": "Successfully registered.",
                 "auth_token": auth_token,
+                "user": user_schema.dump(user),
             }
             return jsonify(response_object), 201
 
