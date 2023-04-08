@@ -16,4 +16,4 @@ mkvirtualenv slice-of-life-server
 pip install -r requirements.txt
 ```
 5. Obtain the `.env` file with the required variables.
-6. Run the server: `./run_gunicorn.sh` OR `python flask_handler.py`.
+6. Run the server: `./run_gunicorn.sh`.
