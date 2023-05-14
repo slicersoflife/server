@@ -12,10 +12,10 @@ def add_routes(bp: Blueprint):
     def friend_request():
         # add POST route to save a new entry in the friend request table, taking in the user id of the person who sent the request and the user id of the person who received the request
         post_data = request.get_json()
-        if "to_user_id" not in post_data:
+        if to_user_id not in post_data or from_user_id not in post_data:
             response_object = {
                 "status": "fail",
-                "message": "Request must be sent to valid user.",
+                "message": "Invalid request",
             }
             return jsonify(response_object), 401
         try:
@@ -85,8 +85,8 @@ def add_routes(bp: Blueprint):
     def delete_friend():
         # GET request to remove a friend from the friends table
         try:
-            from_user_id = request.args.get("from_user_id")
-            to_user_id = request.args.get("to_user_id")
+            from_user_id = request.args.get("user_a")
+            to_user_id = request.args.get("user_b")
             friend = Friend.query.filter_by(
                 from_user_id=from_user_id, to_user_id=to_user_id
             ).first()
