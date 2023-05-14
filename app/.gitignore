@@ -1,0 +1,9 @@
+.env*
+
+*.py[cod]
+
+.idea
+
+*.rdb
+
+*.code-workspace
