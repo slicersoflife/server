@@ -1,9 +1,7 @@
-from uuid import uuid4 as uuid
-
 from flask import request, jsonify, Blueprint, current_app
 from sqlalchemy import select
 
-from app.extensions import db, cache, twilio
+from app.extensions import db
 from .models import Friend, FriendRequest
 
 
