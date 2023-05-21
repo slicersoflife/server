@@ -8,6 +8,8 @@ class BaseConfig:
     SECRET_KEY = os.getenv("SECRET_KEY", "my_precious")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    SQLALCHEMY_ENGINE_OPTIONS = {"supports_statement_cache": False}
+
     CORS_HEADERS = "Content-Type"
 
     VERIFICATION_CODE_LENGTH = 6
