@@ -3,6 +3,8 @@ from sqlalchemy import select
 from fuzzywuzzy import fuzz
 from uuid import uuid4 as uuid
 
+from .helpers import perform_fuzzy_search
+
 # import uuid
 from app.extensions import db
 from .models import Friend, FriendRequest
@@ -96,15 +98,6 @@ def add_routes(bp: Blueprint):
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
             return jsonify(response_object), 503
-
-    # fuzzy search logic
-    def perform_fuzzy_search(query, items):
-        results = []
-        for item in items:
-            ratio = fuzz.token_set_ratio(query, item)
-            if ratio > 50:  # Adjust the threshold as per your requirement
-                results.append(item)
-        return results
 
     # fuzzy search endpoint
     @bp.get("/friend/search")
