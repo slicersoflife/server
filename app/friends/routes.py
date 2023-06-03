@@ -113,19 +113,11 @@ def add_routes(bp: Blueprint):
         from app.auth.models import User
         users = db.session.execute(
             select(User.username)).all()
-        print(users)
-        # user_list = []
-        # for user in users:
-        #     user_list.append(user[0])
-        # cleaned_users = [user.split("|")[1].strip() for user in user_list]
-        # print("Users:")
-        # print(cleaned_users)
-        cleaned_users = list(map(lambda u: u[0], users))
-        items = cleaned_users  # Your list of items to search through
+        items = list(map(lambda u: u[0], users))
         results = perform_fuzzy_search(query, items)
         return jsonify(results)
 
-    @bp.get("/friend/delete")
+    @bp.post("/friend/delete")
     def delete_friend():
         # GET request to remove a friend from the friends table
         post_data = request.get_json()
