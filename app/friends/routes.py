@@ -1,6 +1,9 @@
 from flask import request, jsonify, Blueprint, current_app
 from sqlalchemy import select
+from fuzzywuzzy import fuzz
 from uuid import uuid4 as uuid
+
+from .helpers import perform_fuzzy_search
 
 # import uuid
 from app.extensions import db
@@ -95,6 +98,17 @@ def add_routes(bp: Blueprint):
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
             return jsonify(response_object), 503
+
+    # fuzzy search endpoint
+    @bp.get("/friend/search")
+    def fuzzy_search():
+        query = request.args.get("query")
+        from app.auth.models import User
+
+        users = db.session.execute(select(User.username)).all()
+        items = list(map(lambda u: u[0], users))
+        results = perform_fuzzy_search(query, items)
+        return jsonify(results)
 
     @bp.post("/friend/delete")
     def delete_friend():
