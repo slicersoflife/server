@@ -96,7 +96,7 @@ def add_routes(bp: Blueprint):
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
             return jsonify(response_object), 503
-        
+
     # fuzzy search logic
     def perform_fuzzy_search(query, items):
         results = []
@@ -105,14 +105,14 @@ def add_routes(bp: Blueprint):
             if ratio > 50:  # Adjust the threshold as per your requirement
                 results.append(item)
         return results
-    
-    #fuzzy search endpoint
+
+    # fuzzy search endpoint
     @bp.get("/friend/search")
     def fuzzy_search():
-        query = request.args.get('query')
+        query = request.args.get("query")
         from app.auth.models import User
-        users = db.session.execute(
-            select(User.username)).all()
+
+        users = db.session.execute(select(User.username)).all()
         items = list(map(lambda u: u[0], users))
         results = perform_fuzzy_search(query, items)
         return jsonify(results)
