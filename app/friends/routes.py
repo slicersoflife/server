@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint, current_app
 from sqlalchemy import select
-
+from fuzzywuzzy import fuzz
 from app.extensions import db
 from .models import Friend, FriendRequest
 
@@ -78,6 +78,34 @@ def add_routes(bp: Blueprint):
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
             return jsonify(response_object), 503
+        
+    # fuzzy search logic
+    def perform_fuzzy_search(query, items):
+        results = []
+        for item in items:
+            ratio = fuzz.token_set_ratio(query, item)
+            if ratio > 50:  # Adjust the threshold as per your requirement
+                results.append(item)
+        return results
+    
+    #fuzzy search endpoint
+    @bp.get("/friend/search")
+    def fuzzy_search():
+        query = request.args.get('query')
+        from app.auth.models import User
+        users = db.session.execute(
+            select(User.username)).all()
+        print(users)
+        # user_list = []
+        # for user in users:
+        #     user_list.append(user[0])
+        # cleaned_users = [user.split("|")[1].strip() for user in user_list]
+        # print("Users:")
+        # print(cleaned_users)
+        cleaned_users = list(map(lambda u: u[0], users))
+        items = cleaned_users  # Your list of items to search through
+        results = perform_fuzzy_search(query, items)
+        return jsonify(results)
 
     @bp.get("/friend/delete")
     def delete_friend():
