@@ -143,5 +143,3 @@ def add_routes(bp: Blueprint):
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
             return jsonify(response_object), 503
-
-    pass

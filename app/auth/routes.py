@@ -10,6 +10,7 @@ from .schema import user_schema
 
 
 def add_routes(bp: Blueprint):
+    ## AUTHENTICATION
     @bp.post("/verify/start/mock")
     def verify_start_mock():
         post_data = request.get_json()
@@ -185,3 +186,53 @@ def add_routes(bp: Blueprint):
                 "message": "Some error occurred. Please try again.",
             }
             return jsonify(response_object), 503
+
+    ## Profile
+    @bp.post("/profile/picture_upload")
+    def upload_profile_picture():
+        user_id = request.form.get("user_id")
+        file = request.files.get("profile_picture")
+
+        user = db.session.execute(select(User).filter_by(id=user_id)).first()
+
+        if user is None:
+            response_object = {
+                "status": "fail",
+                "message": "User not found",
+            }
+            return jsonify(response_object), 401
+
+        profile_picture_url = upload_profile_picture(file, user_id)
+
+        user.profile_picture_url = profile_picture_url
+        db.session.commit()
+
+        response_object = {
+            "status": "success",
+            "message": "Successfully uploaded profile picture.",
+        }
+        return jsonify(response_object), 201
+
+    @bp.post("/profile/get_picture")
+    def get_profile_picture():
+        user_id = request.form.get("user_id")
+
+        user = db.session.execute(select(User).filter_by(id=user_id)).first()
+
+        if user is None:
+            response_object = {
+                "status": "fail",
+                "message": "User not found",
+            }
+            return jsonify(response_object), 401
+
+        profile_url = user.profile_picture_url
+
+        presigned_url = get_presigned_url(profile_url, expiration=3600)
+
+        response_object = {
+            "status": "success",
+            "message": "Successfully retrieved profile picture.",
+            "profile_picture_url": presigned_url,
+        }
+        return jsonify(response_object), 200
