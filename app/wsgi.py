@@ -17,10 +17,6 @@ def load_app() -> Flask:
     main_app.register_blueprint(auth_blueprint)
     main_app.register_blueprint(friends_blueprint)
 
-    main_app.config["S3_BUCKET"] = "S3_BUCKET_NAME"
-    main_app.config["S3_KEY"] = "AWS_ACCESS_KEY"
-    main_app.config["S3_SECRET"] = "AWS_ACCESS_SECRET"
-
     CORS(main_app, origins="*")
     db.init_app(main_app)
     migrate.init_app(main_app, db)
