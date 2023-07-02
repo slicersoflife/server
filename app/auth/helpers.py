@@ -1,3 +1,4 @@
+import os
 import datetime
 import hashlib
 import random
@@ -5,16 +6,10 @@ from werkzeug.utils import secure_filename
 
 import jwt
 from flask import current_app
+from flask import request, jsonify, Blueprint, current_app
+from app.extensions import s3
 
 import boto3, botocore
-
-s3 = boto3.client(
-    "s3",
-    aws_access_key_id="AWS_ACCESS_KEY",
-    aws_secret_access_key="AWS_ACCESS_SECRET",
-    region_name="us-east-1",
-    # config=botocore.config.Config(signature_version="s3v4"),
-)
 
 
 ### AUTH ###
@@ -53,11 +48,12 @@ def generate_code():
 
 
 ### S3 ###
-def upload_profile_picture(file, user_id):
+def upload_profile(file, user_id):
     filename = secure_filename(f"{user_id}_{file.filename}")
     s3_key = f"profile-pictures/{filename}"
 
     try:
+        print("Uploading profile picture to s3")
         s3.upload_fileobj(
             file,
             "profile-pictures-for-users",
@@ -72,6 +68,7 @@ def upload_profile_picture(file, user_id):
 
 def get_presigned_url(url, expiration):
     try:
+        print("Generating presigned url")
         response = s3.generate_presigned_url(
             "get_object",
             Params={"Bucket": "profile-pictures-for-users", "Key": url},
