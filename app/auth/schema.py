@@ -11,6 +11,7 @@ class UserSchema(SQLAlchemySchema):
     id = auto_field()
     display_name = auto_field()
     username = auto_field()
+    profile_picture_url = auto_field()
     friends = fields.Method("serialize_friends")
     friend_requests_sent = fields.Nested(
         "UserSchema",

@@ -227,27 +227,31 @@ def add_routes(bp: Blueprint):
             "status": "success",
             "message": "Successfully uploaded profile picture",
         }
-        return jsonify(response_object), 201
 
-    @bp.post("/profile/get_picture")
-    def get_profile_picture():
-        user_id = request.form.get("user_id")
+        # get updated user and print all its attributes
+        user = db.session.execute(select(User).filter_by(id=user_id)).first()[0]
+        print(user_schema.dump(user))
+        return user_schema.dump(user), 200
 
-        profile_picture = db.session.execute(
-            select(User.profile_picture_url).filter_by(id=user_id)
-        ).first()
+    # @bp.post("/profile/get_picture")
+    # def get_profile_picture():
+    #     user_id = request.form.get("user_id")
 
-        if profile_picture is None:
-            response_object = {
-                "status": "fail",
-                "message": "User not found",
-            }
-            return jsonify(response_object), 401
+    #     profile_picture = db.session.execute(
+    #         select(User.profile_picture_url).filter_by(id=user_id)
+    #     ).first()
 
-        profile_picture = str(profile_picture)
+    #     if profile_picture is None:
+    #         response_object = {
+    #             "status": "fail",
+    #             "message": "User not found",
+    #         }
+    #         return jsonify(response_object), 401
 
-        response_object = {
-            "status": "success",
-            "message": "Successfully retrieved profile picture",
-        }
-        return profile_picture, 200
+    #     profile_picture = str(profile_picture)
+
+    #     response_object = {
+    #         "status": "success",
+    #         "message": "Successfully retrieved profile picture",
+    #     }
+    #     return profile_picture, 200

@@ -2,12 +2,13 @@ from flask import request, jsonify, Blueprint, current_app
 from sqlalchemy import select
 from fuzzywuzzy import fuzz
 from uuid import uuid4 as uuid
+from app.auth.models import User
 
 from .helpers import perform_fuzzy_search
 
 # import uuid
 from app.extensions import db
-from .models import Friend, FriendRequest
+from app.auth.models import Friend, FriendRequest, User
 
 
 def add_routes(bp: Blueprint):
@@ -40,6 +41,7 @@ def add_routes(bp: Blueprint):
     def accept_friend_request():
         # POST request to accept a friend request, removing it from the table and adding the friends to the friends table
         post_data = request.get_json()
+
         try:
             from_user_id = post_data.get("from_user_id")
             to_user_id = post_data.get("to_user_id")
@@ -63,7 +65,10 @@ def add_routes(bp: Blueprint):
                 "status": "success",
                 "message": "Friend request accepted",
             }
-            return jsonify(response_object), 200
+            updated_user = db.session.execute(
+                select(User).filter_by(id=to_user_id).first()
+            )
+            return updated_user, 200
         except Exception as exception:
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
@@ -103,7 +108,7 @@ def add_routes(bp: Blueprint):
     @bp.get("/friend/search")
     def fuzzy_search():
         query = request.args.get("query")
-        from app.auth.models import User
+        # from app.auth.models import User
 
         users = db.session.execute(select(User.username)).all()
         items = list(map(lambda u: u[0], users))
