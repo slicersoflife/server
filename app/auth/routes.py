@@ -3,13 +3,21 @@ from uuid import uuid4 as uuid
 from flask import request, jsonify, Blueprint, current_app
 from sqlalchemy import select
 
-from app.extensions import db, cache, twilio
-from .helpers import encode_token, decode_token, generate_code, get_hash
+from app.extensions import db, cache, twilio, s3
+from .helpers import (
+    encode_token,
+    decode_token,
+    generate_code,
+    get_hash,
+    upload_profile,
+    get_presigned_url,
+)
 from .models import User
 from .schema import user_schema
 
 
 def add_routes(bp: Blueprint):
+    ## AUTHENTICATION
     @bp.post("/verify/start/mock")
     def verify_start_mock():
         post_data = request.get_json()
@@ -185,3 +193,65 @@ def add_routes(bp: Blueprint):
                 "message": "Some error occurred. Please try again.",
             }
             return jsonify(response_object), 503
+
+    ## Profile
+    @bp.post("/profile/picture_upload")
+    def upload_profile_picture():
+        user_id = request.form.get("user_id")
+        file = request.files.get("profile_picture")
+        file.filename = user_id + ".png"
+        if not file:
+            response_object = {
+                "status": "fail",
+                "message": "No file found",
+            }
+            return jsonify(response_object), 401
+
+        user = db.session.execute(select(User).filter_by(id=user_id)).first()
+
+        if user is None:
+            response_object = {
+                "status": "fail",
+                "message": "User not found",
+            }
+            return jsonify(response_object), 401
+
+        profile_picture_url = upload_profile(file, user_id)
+
+        db.session.query(User).filter(User.id == user_id).update(
+            {"profile_picture_url": profile_picture_url}
+        )
+        db.session.commit()
+
+        response_object = {
+            "status": "success",
+            "message": "Successfully uploaded profile picture",
+        }
+
+        # get updated user and print all its attributes
+        user = db.session.execute(select(User).filter_by(id=user_id)).first()[0]
+        print(user_schema.dump(user))
+        return user_schema.dump(user), 200
+
+    # @bp.post("/profile/get_picture")
+    # def get_profile_picture():
+    #     user_id = request.form.get("user_id")
+
+    #     profile_picture = db.session.execute(
+    #         select(User.profile_picture_url).filter_by(id=user_id)
+    #     ).first()
+
+    #     if profile_picture is None:
+    #         response_object = {
+    #             "status": "fail",
+    #             "message": "User not found",
+    #         }
+    #         return jsonify(response_object), 401
+
+    #     profile_picture = str(profile_picture)
+
+    #     response_object = {
+    #         "status": "success",
+    #         "message": "Successfully retrieved profile picture",
+    #     }
+    #     return profile_picture, 200

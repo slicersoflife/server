@@ -1,11 +1,18 @@
+import os
 import datetime
 import hashlib
 import random
+from werkzeug.utils import secure_filename
 
 import jwt
 from flask import current_app
+from flask import request, jsonify, Blueprint, current_app
+from app.extensions import s3
+
+import boto3, botocore
 
 
+### AUTH ###
 def encode_token(identifier):
     try:
         payload = {
@@ -38,3 +45,36 @@ def generate_code():
             k=current_app.config.get("VERIFICATION_CODE_LENGTH"),
         ),
     )
+
+
+### S3 ###
+def upload_profile(file, user_id):
+    filename = secure_filename(f"{user_id}_{file.filename}")
+    s3_key = f"profile-pictures/{filename}"
+
+    try:
+        print("Uploading profile picture to s3")
+        s3.upload_fileobj(
+            file,
+            "profile-pictures-for-users",
+            s3_key,
+            ExtraArgs={"ACL": "public-read", "ContentType": file.content_type},
+        )
+        return f"https://profile-pictures-for-users.s3.amazonaws.com/{s3_key}"
+    except Exception as exception:
+        print(exception)
+        return exception
+
+
+def get_presigned_url(url, expiration):
+    try:
+        print("Generating presigned url")
+        response = s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": "profile-pictures-for-users", "Key": url},
+            ExpiresIn=expiration,
+        )
+        return response
+    except Exception as exception:
+        print(exception)
+        return exception
