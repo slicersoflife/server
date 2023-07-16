@@ -110,6 +110,36 @@ def add_routes(bp: Blueprint):
         results = perform_fuzzy_search(query, items)
         return jsonify(results)
 
+    # mutual friends endpoint
+    @bp.get("/friend/mutuals")
+    def find_mutuals():
+        from app.auth.models import User
+
+        # Fetch user data from the database
+        users_data = db.session.execute(
+            select(User.id, User.username, User.friends)
+        ).all()
+
+        # Convert the data into a dictionary with user_id as keys
+        users = {
+            user.id: {"username": user.username, "friends": user.friends}
+            for user in users_data
+        }
+
+        # Helper function to find friends intersection
+        def find_mutual_friends(user_id1, user_id2):
+            user1_friends = set(users[user_id1]["friends"])
+            user2_friends = set(users[user_id2]["friends"])
+            mutual_friends = user1_friends.intersection(user2_friends)
+            return mutual_friends
+
+        user_id1 = int(request.args.get("user_id1"))
+        user_id2 = int(request.args.get("user_id2"))
+        if user_id1 not in users or user_id2 not in users:
+            return jsonify(error="One or both user IDs do not exist"), 404
+        mutual_friends = find_mutual_friends(user_id1, user_id2)
+        return jsonify(mutual_friends=list(mutual_friends))
+
     @bp.post("/friend/delete")
     def delete_friend():
         # GET request to remove a friend from the friends table
