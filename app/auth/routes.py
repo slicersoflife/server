@@ -204,18 +204,13 @@ def add_routes(bp: Blueprint):
             return jsonify(response_object), 401
 
         user_id = decode_token(auth_header[1])
-        user = db.session.execute(
-            select(User).filter_by(id=user_id)
-        ).first()[0]
+        user = db.session.execute(select(User).filter_by(id=user_id)).first()[0]
         if not user:
             response_data = {
                 "status": "fail",
-                "message": "No user with that id exists."
+                "message": "No user with that id exists.",
             }
             return jsonify(response_data), 404
 
-        response_data = {
-            "status": "success",
-            "user": user_schema.dump(user)
-        }
+        response_data = {"status": "success", "user": user_schema.dump(user)}
         return jsonify(response_data), 200
