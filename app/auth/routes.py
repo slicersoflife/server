@@ -185,3 +185,37 @@ def add_routes(bp: Blueprint):
                 "message": "Some error occurred. Please try again.",
             }
             return jsonify(response_object), 503
+
+    @bp.get("/profile")
+    def profile():
+        if "Authorization" not in request.headers:
+            response_object = {
+                "status": "fail",
+                "message": "You must provide an authorization token.",
+            }
+            return jsonify(response_object), 401
+
+        auth_header = request.headers.get("Authorization").split()
+        if len(auth_header) < 2:
+            response_object = {
+                "status": "fail",
+                "message": "Invalid authorization header format.",
+            }
+            return jsonify(response_object), 401
+
+        user_id = decode_token(auth_header[1])
+        user = db.session.execute(
+            select(User).filter_by(id=user_id)
+        ).first()[0]
+        if not user:
+            response_data = {
+                "status": "fail",
+                "message": "No user with that id exists."
+            }
+            return jsonify(response_data), 404
+
+        response_data = {
+            "status": "success",
+            "user": user_schema.dump(user)
+        }
+        return jsonify(response_data), 200
