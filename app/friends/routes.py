@@ -1,25 +1,17 @@
 from flask import request, jsonify, Blueprint, current_app
 from sqlalchemy import select
-from fuzzywuzzy import fuzz
-from uuid import uuid4 as uuid
 
-from .helpers import perform_fuzzy_search
-
-# import uuid
 from app.extensions import db
-from .models import Friend, FriendRequest
+from .helpers import perform_fuzzy_search
+from .models import Friendship, FriendRequest
 
 
 def add_routes(bp: Blueprint):
     @bp.post("/friend_request")
-    def friend_request():
-        # add POST route to save a new entry in the friend request table, taking in the user id of the
-        # person who sent the request and the user id of the person who received the request
-        # I get an error, module' object is not callable, can you change the following code to fix this
+    def send_friend_request():
         post_data = request.get_json()
         try:
             friend_request = FriendRequest(
-                id=uuid(),
                 from_user_id=post_data.get("from_user_id"),
                 to_user_id=post_data.get("to_user_id"),
             )
@@ -31,6 +23,7 @@ def add_routes(bp: Blueprint):
             }
             db.session.close()
             return jsonify(response_object), 200
+
         except Exception as exception:
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
@@ -38,7 +31,6 @@ def add_routes(bp: Blueprint):
 
     @bp.post("/friend_request/accept")
     def accept_friend_request():
-        # POST request to accept a friend request, removing it from the table and adding the friends to the friends table
         post_data = request.get_json()
         try:
             from_user_id = post_data.get("from_user_id")
@@ -54,16 +46,17 @@ def add_routes(bp: Blueprint):
                     "message": "Friend request does not exist",
                 }
                 return jsonify(response_object), 401
+
             db.session.delete(friend_request)
-            db.session.commit()
-            friend = Friend(id=uuid(), user_a_id=from_user_id, user_b_id=to_user_id)
-            db.session.add(friend)
+            friendship = Friendship(user_a_id=from_user_id, user_b_id=to_user_id)
+            db.session.add(friendship)
             db.session.commit()
             response_object = {
                 "status": "success",
                 "message": "Friend request accepted",
             }
             return jsonify(response_object), 200
+
         except Exception as exception:
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
@@ -87,6 +80,7 @@ def add_routes(bp: Blueprint):
                     "message": "Friend request does not exist",
                 }
                 return jsonify(response_object), 401
+
             db.session.delete(friend_request)
             db.session.commit()
             response_object = {
@@ -94,14 +88,14 @@ def add_routes(bp: Blueprint):
                 "message": "Friend request declined",
             }
             return jsonify(response_object), 200
+
         except Exception as exception:
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
             return jsonify(response_object), 503
 
-    # fuzzy search endpoint
     @bp.get("/friend/search")
-    def fuzzy_search():
+    def search_friend():
         query = request.args.get("query")
         from app.auth.models import User
 
@@ -118,11 +112,13 @@ def add_routes(bp: Blueprint):
             from_user_id = post_data.get("user_a_id")
             to_user_id = post_data.get("user_b_id")
             friend = db.session.scalars(
-                select(Friend).filter_by(user_a_id=from_user_id, user_b_id=to_user_id)
+                select(Friendship).filter_by(
+                    user_a_id=from_user_id, user_b_id=to_user_id
+                )
             ).first()
             if friend is None:
                 friend = db.session.scalars(
-                    select(Friend).filter_by(
+                    select(Friendship).filter_by(
                         user_a_id=to_user_id, user_b_id=from_user_id
                     )
                 ).first()
@@ -132,6 +128,7 @@ def add_routes(bp: Blueprint):
                         "message": "Friend does not exist",
                     }
                     return jsonify(response_object), 401
+
             db.session.delete(friend)
             db.session.commit()
             response_object = {
@@ -139,9 +136,8 @@ def add_routes(bp: Blueprint):
                 "message": "Removed friend",
             }
             return jsonify(response_object), 200
+
         except Exception as exception:
             print(exception)
             response_object = {"status": "fail", "message": str(exception)}
             return jsonify(response_object), 503
-
-    pass

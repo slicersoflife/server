@@ -84,7 +84,6 @@ def add_routes(bp: Blueprint):
 
         phone_number_hash = get_hash(post_data.get("phone"))
         saved_code = cache.get(phone_number_hash)
-
         if saved_code is None:
             response_object = {
                 "status": "fail",
@@ -111,6 +110,7 @@ def add_routes(bp: Blueprint):
                     "verification_token": verification_token,
                 }
                 return jsonify(response_object), 200
+
             else:
                 auth_token = encode_token(user.id)
                 response_object = {
@@ -203,7 +203,17 @@ def add_routes(bp: Blueprint):
             }
             return jsonify(response_object), 401
 
-        user_id = decode_token(auth_header[1])
+        user_id = None
+        try:
+            user_id = decode_token(auth_header[1])
+        except Exception as exception:
+            print(exception)
+            response_object = {
+                "status": "fail",
+                "message": "Invalid authorization token.",
+            }
+            return jsonify(response_object), 401
+
         user = db.session.execute(select(User).filter_by(id=user_id)).first()[0]
         if not user:
             response_data = {

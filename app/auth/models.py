@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.extensions import db
-from app.friends.models import Friend, FriendRequest
+from app.friends.models import Friendship, FriendRequest
 
 
 class User(db.Model):
@@ -17,16 +17,16 @@ class User(db.Model):
 
     friends_a = relationship(
         "User",
-        secondary=Friend.__tablename__,
-        primaryjoin=id == Friend.user_a_id,
-        secondaryjoin=id == Friend.user_b_id,
+        secondary=Friendship.__tablename__,
+        primaryjoin=id == Friendship.user_a_id,
+        secondaryjoin=id == Friendship.user_b_id,
         viewonly=True,
     )
     friends_b = relationship(
         "User",
-        secondary=Friend.__tablename__,
-        primaryjoin=id == Friend.user_b_id,
-        secondaryjoin=id == Friend.user_a_id,
+        secondary=Friendship.__tablename__,
+        primaryjoin=id == Friendship.user_b_id,
+        secondaryjoin=id == Friendship.user_a_id,
         viewonly=True,
     )
     friend_requests_sent = relationship(
