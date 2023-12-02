@@ -112,7 +112,9 @@ def add_routes(bp: Blueprint):
             from_user_id = post_data.get("user_a_id")
             to_user_id = post_data.get("user_b_id")
             friend = db.session.scalars(
-                select(Friendship).filter_by(user_a_id=from_user_id, user_b_id=to_user_id)
+                select(Friendship).filter_by(
+                    user_a_id=from_user_id, user_b_id=to_user_id
+                )
             ).first()
             if friend is None:
                 friend = db.session.scalars(

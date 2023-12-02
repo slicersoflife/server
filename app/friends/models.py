@@ -14,5 +14,7 @@ class Friendship(db.Model):
 class FriendRequest(db.Model):
     __tablename__ = "friend_requests"
 
-    from_user_id = Column(UUID, ForeignKey("users.id"), nullable=False, primary_key=True)
+    from_user_id = Column(
+        UUID, ForeignKey("users.id"), nullable=False, primary_key=True
+    )
     to_user_id = Column(UUID, ForeignKey("users.id"), nullable=False, primary_key=True)
