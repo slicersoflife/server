@@ -41,7 +41,7 @@ sqlalchemy-cockroachdb==1.4.4
 tomli==2.0.1
 twilio==7.16.1
 typing_extensions==4.5.0
-urllib3==1.26.14
+urllib3==1.26.18
 Werkzeug==2.3.8
 zipp==3.11.0
 zope.event==4.6
